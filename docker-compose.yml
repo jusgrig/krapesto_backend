@@ -1,0 +1,36 @@
+services:
+  web:
+    build: .
+    image: krapesto_backend-web
+    container_name: krapesto_backend
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      - DJANGO_DEBUG=1
+      - DJANGO_SECRET_KEY=unsafe-secret-key
+      - DB_NAME=krapesto
+      - DB_USER=krapesto
+      - DB_PASSWORD=krapesto0000
+      - DB_HOST=db
+      - DB_PORT=5432
+    volumes:
+      - ./app:/app
+
+  db:
+    image: postgres:16
+    container_name: krapesto_db
+    restart: always
+    environment:
+      - POSTGRES_DB=krapesto
+      - POSTGRES_USER=krapesto
+      - POSTGRES_PASSWORD=krapesto0000
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:
