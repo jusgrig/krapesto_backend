@@ -3,13 +3,14 @@ Django settings for config project.
 Production-ready for Docker + PostgreSQL
 """
 
-from pathlib import Path
 import os
+from pathlib import Path
+from dotenv import load_dotenv
 
-# ------------------------------------------------------------------------------
-# BASE DIR
-# ------------------------------------------------------------------------------
+# Load variables from .env file
+load_dotenv()
 
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -17,9 +18,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY
 # ------------------------------------------------------------------------------
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "unsafe-secret-key")
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'fallback-key')
 
-DEBUG =  True
+# DEBUG: Accept common truthy values ('1', 'true', 'True', 'yes', 'Yes')
+DEBUG_VALUE = os.environ.get('DJANGO_DEBUG', 'False').lower()
+DEBUG = DEBUG_VALUE in ('1', 'true', 'yes', 'on')
 ALLOWED_HOSTS = [
     "57.128.249.100",
     "localhost",
@@ -89,16 +92,15 @@ WSGI_APPLICATION = "config.wsgi.application"
 # ------------------------------------------------------------------------------
 # DATABASE (PostgreSQL)
 # ------------------------------------------------------------------------------
-import os
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'krapesto',
-        'USER': 'krapesto',
-        'PASSWORD': 'krapesto0000',
-        'HOST': 'db',
-        'PORT': '5432',
+        'NAME': os.environ.get('DB_NAME', 'krapesto'),
+        'USER': os.environ.get('DB_USER', 'krapesto'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'krapesto0000'),
+        'HOST': os.environ.get('DB_HOST', 'db'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
 
