@@ -1,0 +1,46 @@
+{% extends 'menu/base.html' %}
+{% load menu_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>{{ title }}</h2>
+    <p style="margin-bottom: 1rem; color: #666;">
+        {% if user_menu_language == 'lt' %}
+        Kompleksas: <strong>{{ complex|get_name:user_menu_language }}</strong>
+        {% else %}
+        Complex: <strong>{{ complex|get_name:user_menu_language }}</strong>
+        {% endif %}
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.complex }}
+        <div class="form-group">
+            <label>{% if user_menu_language == 'lt' %}Sriubos dydis{% else %}Soup Size{% endif %}</label>
+            {{ form.soup_size }}
+            {% if form.soup_size.errors %}
+                <div style="color: red; font-size: 0.9em;">{{ form.soup_size.errors }}</div>
+            {% endif %}
+        </div>
+        <div class="form-group">
+            <label>{% if user_menu_language == 'lt' %}Pagrindinio patiekalo tipas{% else %}Main Dish Type{% endif %}</label>
+            {{ form.main_dish_type }}
+            {% if form.main_dish_type.errors %}
+                <div style="color: red; font-size: 0.9em;">{{ form.main_dish_type.errors }}</div>
+            {% endif %}
+            <small style="color: #666; display: block; margin-top: 5px;">{% if user_menu_language == 'lt' %}Pasirinkite pagrindinį patiekalą arba lengvą pagrindinį patiekalą{% else %}Choose main dish or main light dish{% endif %}</small>
+        </div>
+        <div class="form-group">
+            <label>{% if user_menu_language == 'lt' %}Eilės tvarka{% else %}Order{% endif %}</label>
+            {{ form.order }}
+            {% if form.order.errors %}
+                <div style="color: red; font-size: 0.9em;">{{ form.order.errors }}</div>
+            {% endif %}
+        </div>
+        <button type="submit" class="btn btn-success">{% if user_menu_language == 'lt' %}Išsaugoti{% else %}Save{% endif %}</button>
+        <a href="{% url 'user_menu:complex_dish_list' complex.pk %}" class="btn">{% if user_menu_language == 'lt' %}Atšaukti{% else %}Cancel{% endif %}</a>
+    </form>
+</div>
+{% endblock %}
+

@@ -1,0 +1,49 @@
+{% extends 'menu/base.html' %}
+{% load menu_tags %}
+
+{% block title %}{% if user_menu_language == 'lt' %}Komplekso parinktys{% else %}Complex Options{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>{{ complex|get_name:user_menu_language }} - {% if user_menu_language == 'lt' %}Parinktys{% else %}Options{% endif %}</h2>
+    <div style="margin-bottom: 1rem;">
+        <a href="{% url 'user_menu:complex_dish_create' complex.pk %}" class="btn btn-success">{% if user_menu_language == 'lt' %}Pridėti parinktį{% else %}Add Option{% endif %}</a>
+        <a href="{% url 'user_menu:complex_list' %}" class="btn">{% if user_menu_language == 'lt' %}Grįžti į kompleksų sąrašą{% else %}Back to Complexes{% endif %}</a>
+    </div>
+</div>
+
+<div class="card">
+    <p style="margin-bottom: 1rem; color: #666;">
+        {% if user_menu_language == 'lt' %}
+        Komplekso kaina: <strong>€{{ complex.price }}</strong>
+        {% else %}
+        Complex price: <strong>€{{ complex.price }}</strong>
+        {% endif %}
+    </p>
+    <table>
+        <thead>
+            <tr>
+                <th>{% if user_menu_language == 'lt' %}Eilės tvarka{% else %}Order{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Sriubos dydis{% else %}Soup Size{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Pagrindinio patiekalo tipas{% else %}Main Dish Type{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Veiksmai{% else %}Actions{% endif %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for complex_dish in complex_dishes %}
+            <tr>
+                <td>{{ complex_dish.order }}</td>
+                <td>{% if complex_dish.soup_size == 'half' %}{% if user_menu_language == 'lt' %}Pusė{% else %}Half{% endif %}{% else %}{% if user_menu_language == 'lt' %}Pilnas{% else %}Full{% endif %}{% endif %}</td>
+                <td>{% if complex_dish.main_dish_type == 'main' %}{% if user_menu_language == 'lt' %}Pagrindinis patiekalas{% else %}Main Dish{% endif %}{% else %}{% if user_menu_language == 'lt' %}Lengvas pagrindinis patiekalas{% else %}Main Light Dish{% endif %}{% endif %}</td>
+                <td>
+                    <a href="{% url 'user_menu:complex_dish_delete' complex_dish.pk %}" class="btn btn-danger">{% if user_menu_language == 'lt' %}Pašalinti{% else %}Delete{% endif %}</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">{% if user_menu_language == 'lt' %}Parinkčių nerasta.{% else %}No options found.{% endif %} <a href="{% url 'user_menu:complex_dish_create' complex.pk %}">{% if user_menu_language == 'lt' %}Pridėti{% else %}Add one{% endif %}</a></td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

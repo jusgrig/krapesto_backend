@@ -3,21 +3,26 @@ services:
     build: .
     image: krapesto_backend-web
     container_name: krapesto_backend
+    restart: always
+    # Gunicorn is used for production stability
     command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
-    ports:
-      - "8000:8000"
     depends_on:
       - db
+    ports:
+      - "8000:8000"  # Opened so you can reach the site via IP:8000
     environment:
-      - DJANGO_DEBUG=1
-      - DJANGO_SECRET_KEY=unsafe-secret-key
+      - DJANGO_DEBUG=0
+      - DJANGO_SECRET_KEY=your-secure-production-key
       - DB_NAME=krapesto
       - DB_USER=krapesto
       - DB_PASSWORD=krapesto0000
       - DB_HOST=db
       - DB_PORT=5432
     volumes:
-      - ./app:/app
+      - ./app:/app  # Maps your VPS code folder to the container
+    networks:
+      - nginx-proxy-network
+      - default
 
   db:
     image: postgres:16
@@ -29,8 +34,26 @@ services:
       - POSTGRES_PASSWORD=krapesto0000
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    # Port 5432 is NOT exposed to the internet for security
+    networks:
+      - default
+
+  static-site:
+    build:
+      context: ../krapesto_frontend
+      dockerfile: Dockerfile
+    image: krapesto-static-site
+    container_name: krapesto_static_site
+    restart: always
     ports:
-      - "5432:5432"
+      - "3000:3000"  # Static site accessible on port 3000
+    networks:
+      - nginx-proxy-network
+      - default
+
+networks:
+  nginx-proxy-network:
+    external: true
 
 volumes:
   postgres_data:

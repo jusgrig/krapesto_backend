@@ -1,0 +1,21 @@
+{% extends 'menu/base.html' %}
+{% load menu_tags %}
+
+{% block title %}{% if user_menu_language == 'lt' %}Pašalinti parinktį{% else %}Delete Option{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>{% if user_menu_language == 'lt' %}Pašalinti parinktį{% else %}Delete Option{% endif %}</h2>
+    <p>{% if user_menu_language == 'lt' %}Ar tikrai norite pašalinti šią parinktį?{% else %}Are you sure you want to delete this option?{% endif %}</p>
+    <p>
+        <strong>{% if user_menu_language == 'lt' %}Sriubos dydis:{% else %}Soup Size:{% endif %}</strong> {% if complex_dish.soup_size == 'half' %}{% if user_menu_language == 'lt' %}Pusė{% else %}Half{% endif %}{% else %}{% if user_menu_language == 'lt' %}Pilnas{% else %}Full{% endif %}{% endif %}<br>
+        <strong>{% if user_menu_language == 'lt' %}Pagrindinio patiekalo tipas:{% else %}Main Dish Type:{% endif %}</strong> {% if complex_dish.main_dish_type == 'main' %}{% if user_menu_language == 'lt' %}Pagrindinis patiekalas{% else %}Main Dish{% endif %}{% else %}{% if user_menu_language == 'lt' %}Lengvas pagrindinis patiekalas{% else %}Main Light Dish{% endif %}{% endif %}
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">{% if user_menu_language == 'lt' %}Taip, pašalinti{% else %}Yes, delete{% endif %}</button>
+        <a href="{% url 'user_menu:complex_dish_list' complex_dish.complex.pk %}" class="btn">{% if user_menu_language == 'lt' %}Atšaukti{% else %}Cancel{% endif %}</a>
+    </form>
+</div>
+{% endblock %}
+

@@ -1,0 +1,35 @@
+{% extends 'menu/base.html' %}
+
+{% block title %}{% if user_menu_language == 'lt' %}Dienos meniu{% else %}Daily Menus{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>{% if user_menu_language == 'lt' %}Dienos meniu{% else %}Daily Menus{% endif %}</h2>
+    <a href="{% url 'user_menu:daily_menu_create' %}" class="btn btn-success">{% if user_menu_language == 'lt' %}Sukurti naują dienos meniu{% else %}Create New Daily Menu{% endif %}</a>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>{% if user_menu_language == 'lt' %}Data{% else %}Date{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Būsena{% else %}Status{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Patiekalų skaičius{% else %}Dishes Count{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Veiksmai{% else %}Actions{% endif %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for menu in menus %}
+            <tr>
+                <td>{{ menu.date }}</td>
+                <td>{% if menu.published %}<span style="color: green;">{% if user_menu_language == 'lt' %}Paskelbtas{% else %}Published{% endif %}</span>{% else %}<span style="color: orange;">{% if user_menu_language == 'lt' %}Juodraštis{% else %}Draft{% endif %}</span>{% endif %}</td>
+                <td>{{ menu.dishes.count }}</td>
+                <td><a href="{% url 'user_menu:daily_menu_edit' menu.pk %}" class="btn">{% if user_menu_language == 'lt' %}Redaguoti{% else %}Edit{% endif %}</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">{% if user_menu_language == 'lt' %}Dienos meniu nerasta.{% else %}No daily menus found.{% endif %} <a href="{% url 'user_menu:daily_menu_create' %}">{% if user_menu_language == 'lt' %}Sukurti{% else %}Create one{% endif %}</a></td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

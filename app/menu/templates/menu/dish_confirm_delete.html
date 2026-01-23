@@ -1,0 +1,18 @@
+{% extends 'menu/base.html' %}
+{% load menu_tags %}
+
+{% block title %}{% if user_menu_language == 'lt' %}Ištrinti patiekalą{% else %}Delete Dish{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>{% if user_menu_language == 'lt' %}Deaktyvuoti patiekalą{% else %}Deactivate Dish{% endif %}</h2>
+    <p>{% if user_menu_language == 'lt' %}Ar tikrai norite deaktyvuoti "{{ dish|get_name:user_menu_language }}"?{% else %}Are you sure you want to deactivate "{{ dish|get_name:user_menu_language }}"?{% endif %}</p>
+    <p>{% if user_menu_language == 'lt' %}Tai nustatys patiekalą kaip neaktyvų (švelnus ištrynimas). Jis liks duomenų bazėje, bet nebus rodomas aktyvių patiekalų sąraše.{% else %}This will set the dish as inactive (soft delete). It will remain in the database but won't appear in active dish lists.{% endif %}</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">{% if user_menu_language == 'lt' %}Deaktyvuoti{% else %}Deactivate{% endif %}</button>
+        <a href="{% url 'user_menu:dish_list' %}" class="btn">{% if user_menu_language == 'lt' %}Atšaukti{% else %}Cancel{% endif %}</a>
+    </form>
+</div>
+{% endblock %}
+

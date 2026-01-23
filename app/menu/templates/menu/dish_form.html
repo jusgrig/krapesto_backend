@@ -1,0 +1,137 @@
+{% extends 'menu/base.html' %}
+{% load menu_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>{{ title }}</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>{% if user_menu_language == 'lt' %}Kategorija{% else %}Category{% endif %}</label>
+            {{ form.category }}
+        </div>
+        <div class="form-group" id="subcategory-group" style="display: none;">
+            <label>{% if user_menu_language == 'lt' %}Subkategorija{% else %}Subcategory{% endif %}</label>
+            {{ form.subcategory }}
+            <small style="color: #666; display: block; margin-top: 5px;">{% if user_menu_language == 'lt' %}Neprivaloma, pvz., alus, vynas, limonadas{% else %}Optional, e.g., Beer, Wine, Lemonade{% endif %}</small>
+        </div>
+        <div class="form-group">
+            <label>{% if user_menu_language == 'lt' %}Pavadinimas (anglų kalba){% else %}Name (English){% endif %}</label>
+            {{ form.name_en }}
+        </div>
+        <div class="form-group">
+            <label>{% if user_menu_language == 'lt' %}Pavadinimas (lietuvių kalba){% else %}Name (Lithuanian){% endif %}</label>
+            {{ form.name_lt }}
+        </div>
+        <div class="form-group">
+            <label>{% if user_menu_language == 'lt' %}Ingredientai (anglų kalba){% else %}Ingredients (English){% endif %}</label>
+            {{ form.ingredients_en }}
+        </div>
+        <div class="form-group">
+            <label>{% if user_menu_language == 'lt' %}Ingredientai (lietuvių kalba){% else %}Ingredients (Lithuanian){% endif %}</label>
+            {{ form.ingredients_lt }}
+        </div>
+        <div class="form-group">
+            <label>{% if user_menu_language == 'lt' %}Kaina (pilnas dydis){% else %}Price (Full Size){% endif %}</label>
+            {{ form.price }}
+        </div>
+        <div class="form-group">
+            <label>{% if user_menu_language == 'lt' %}Kaina (pusė dydžio){% else %}Price (Half Size){% endif %}</label>
+            {{ form.half_price }}
+            <small style="color: #666; display: block; margin-top: 5px;">{% if user_menu_language == 'lt' %}Neprivaloma, dažniausiai sriuboms{% else %}Optional, mainly for soups{% endif %}</small>
+        </div>
+        <div class="form-group">
+            <label>{% if user_menu_language == 'lt' %}Nuotrauka{% else %}Image{% endif %}</label>
+            {% if dish and dish.image %}
+                <div style="margin-bottom: 10px;">
+                    <img src="{{ dish.image.url }}" alt="{% if user_menu_language == 'lt' %}Dabartinė nuotrauka{% else %}Current image{% endif %}" style="max-width: 200px; max-height: 200px; border: 1px solid #ddd; border-radius: 4px; padding: 5px;">
+                    <p style="color: #666; font-size: 0.9em; margin-top: 5px;">{% if user_menu_language == 'lt' %}Dabartinė nuotrauka. Pasirinkite naują failą, jei norite ją pakeisti.{% else %}Current image. Select a new file to replace it.{% endif %}</p>
+                </div>
+            {% endif %}
+            {{ form.image }}
+            <small style="color: #666; display: block; margin-top: 5px;">{% if user_menu_language == 'lt' %}Pasirinkite nuotraukos failą (JPG, PNG, GIF){% else %}Select an image file (JPG, PNG, GIF){% endif %}</small>
+        </div>
+        <div class="form-group">
+            <label>{{ form.active.label }} {% if user_menu_language == 'lt' %}(Aktyvus){% else %}(Active){% endif %}</label>
+            {{ form.active }}
+        </div>
+        <button type="submit" class="btn btn-success">{% if user_menu_language == 'lt' %}Išsaugoti{% else %}Save{% endif %}</button>
+        <a href="{% url 'user_menu:dish_list' %}" class="btn">{% if user_menu_language == 'lt' %}Atšaukti{% else %}Cancel{% endif %}</a>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const categorySelect = document.getElementById('id_category');
+    const subcategorySelect = document.getElementById('id_subcategory');
+    const subcategoryGroup = document.getElementById('subcategory-group');
+    
+    // Store the initially selected subcategory value (for editing existing dishes)
+    const initialSubcategoryValue = subcategorySelect ? subcategorySelect.value : '';
+    
+    function loadSubcategories(categoryId, preserveValue = false) {
+        console.log('Loading subcategories for category ID:', categoryId);
+        if (!categoryId || !subcategorySelect || !subcategoryGroup) {
+            if (subcategoryGroup) subcategoryGroup.style.display = 'none';
+            return;
+        }
+        
+        fetch(`/user-menu/api/subcategories/?category_id=${categoryId}`)
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Subcategories data:', data);
+                if (!subcategorySelect || !subcategoryGroup) return;
+                
+                subcategorySelect.innerHTML = '<option value="">---------</option>';
+                if (data.subcategories && data.subcategories.length > 0) {
+                    console.log(`Found ${data.subcategories.length} subcategories`);
+                    subcategoryGroup.style.display = 'block';
+                    data.subcategories.forEach(subcat => {
+                        const option = document.createElement('option');
+                        option.value = subcat.id;
+                        option.textContent = subcat.name_en;
+                        subcategorySelect.appendChild(option);
+                    });
+                    // Restore the selected value if preserving (for editing)
+                    if (preserveValue && initialSubcategoryValue) {
+                        subcategorySelect.value = initialSubcategoryValue;
+                        console.log('Restored subcategory value:', initialSubcategoryValue);
+                    }
+                } else {
+                    console.log('No subcategories found for this category');
+                    subcategoryGroup.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Error loading subcategories:', error);
+                if (subcategoryGroup) subcategoryGroup.style.display = 'none';
+            });
+    }
+    
+    // Load subcategories on page load if category is already selected (preserve value for editing)
+    if (categorySelect && categorySelect.value) {
+        console.log('Initial category selected:', categorySelect.value);
+        loadSubcategories(categorySelect.value, true);
+    }
+    
+    // Load subcategories when category changes
+    if (categorySelect) {
+        categorySelect.addEventListener('change', function() {
+            console.log('Category changed to:', this.value);
+            loadSubcategories(this.value, false);
+            // Reset subcategory selection when category changes
+            if (subcategorySelect) subcategorySelect.value = '';
+        });
+    }
+});
+</script>
+{% endblock %}
+

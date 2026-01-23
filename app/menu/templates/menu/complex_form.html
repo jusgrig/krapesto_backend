@@ -1,0 +1,48 @@
+{% extends 'menu/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>{{ title }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>{% if user_menu_language == 'lt' %}Pavadinimas (anglų kalba){% else %}Name (English){% endif %}</label>
+            {{ form.name_en }}
+            {% if form.name_en.errors %}
+                <div style="color: red; font-size: 0.9em;">{{ form.name_en.errors }}</div>
+            {% endif %}
+        </div>
+        <div class="form-group">
+            <label>{% if user_menu_language == 'lt' %}Pavadinimas (lietuvių kalba){% else %}Name (Lithuanian){% endif %}</label>
+            {{ form.name_lt }}
+            {% if form.name_lt.errors %}
+                <div style="color: red; font-size: 0.9em;">{{ form.name_lt.errors }}</div>
+            {% endif %}
+        </div>
+        <div class="form-group">
+            <label>{% if user_menu_language == 'lt' %}Kaina{% else %}Price{% endif %}</label>
+            {{ form.price }}
+            {% if form.price.errors %}
+                <div style="color: red; font-size: 0.9em;">{{ form.price.errors }}</div>
+            {% endif %}
+        </div>
+        <div class="form-group">
+            <label>{% if user_menu_language == 'lt' %}Eilės tvarka{% else %}Order{% endif %}</label>
+            {{ form.order }}
+            {% if form.order.errors %}
+                <div style="color: red; font-size: 0.9em;">{{ form.order.errors }}</div>
+            {% endif %}
+        </div>
+        <div class="form-group">
+            <label>{{ form.active.label }} {% if user_menu_language == 'lt' %}(Aktyvus){% else %}(Active){% endif %}</label>
+            {{ form.active }}
+        </div>
+        <button type="submit" class="btn btn-success">{% if user_menu_language == 'lt' %}Išsaugoti{% else %}Save{% endif %}</button>
+        <a href="{% url 'user_menu:complex_list' %}" class="btn">{% if user_menu_language == 'lt' %}Atšaukti{% else %}Cancel{% endif %}</a>
+    </form>
+</div>
+{% endblock %}
+
+

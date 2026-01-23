@@ -1,0 +1,398 @@
+{% extends 'menu/base.html' %}
+{% load menu_tags %}
+
+{% block title %}{% if user_menu_language == 'lt' %}Redaguoti dienos meniu{% else %}Edit Daily Menu{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filter-section {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    .filter-group {
+        flex: 1;
+        min-width: 200px;
+    }
+    .filter-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #555;
+    }
+    .filter-group select,
+    .filter-group input {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.95rem;
+    }
+    .dishes-list {
+        margin-top: 1rem;
+    }
+    .dishes-list table {
+        background: white;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .dish-row {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .dish-row:hover {
+        background: #f8f9fa !important;
+    }
+    .dish-row.in-menu {
+        background: #f0f9f4 !important;
+        opacity: 0.8;
+        cursor: default;
+    }
+    .dish-row.in-menu:hover {
+        background: #f0f9f4 !important;
+    }
+    .dish-row .dish-name {
+        font-weight: 600;
+        font-size: 1rem;
+        color: #2c3e50;
+    }
+    .dish-row .dish-category {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+    }
+    .dish-row .dish-ingredients {
+        color: #95a5a6;
+        font-size: 0.85rem;
+        font-style: italic;
+    }
+    .dish-row .dish-price {
+        color: #27ae60;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    .dish-row .checkmark {
+        color: #27ae60;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+    .no-dishes {
+        text-align: center;
+        padding: 2rem;
+        color: #7f8c8d;
+    }
+    .menu-dishes-section {
+        margin-top: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+        <div style="flex: 1;">
+            <h2 style="margin: 0 0 0.5rem 0;">{% if user_menu_language == 'lt' %}Redaguoti dienos meniu{% else %}Edit Daily Menu{% endif %} - {{ daily_menu.date }}</h2>
+            <form method="post" id="published-form" style="display: inline;">
+                {% csrf_token %}
+                <input type="hidden" name="toggle_published" value="1">
+                <label style="cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" name="published" {% if daily_menu.published %}checked{% endif %} onchange="this.form.submit()" style="cursor: pointer; width: 18px; height: 18px;">
+                    <span>{% if user_menu_language == 'lt' %}Paskelbtas{% else %}Published{% endif %}</span>
+                </label>
+            </form>
+        </div>
+        <a href="{% url 'user_menu:daily_menu_preview' daily_menu.pk %}" class="btn" style="background: #3498db; color: white; text-decoration: none; padding: 0.75rem 1.5rem; border-radius: 4px; font-weight: 600; display: inline-block; white-space: nowrap;">
+            {% if user_menu_language == 'lt' %}👁️ Peržiūra{% else %}👁️ Preview{% endif %}
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <h3>{% if user_menu_language == 'lt' %}Pridėti patiekalą į meniu{% else %}Add Dish to Menu{% endif %}</h3>
+    <p style="color: #7f8c8d; margin-bottom: 1rem;">{% if user_menu_language == 'lt' %}Spustelėkite ant patiekalo, kad pridėtumėte jį į meniu{% else %}Click on a dish to add it to the menu{% endif %}</p>
+    
+    <div class="filter-section">
+        <div class="filter-group">
+            <label>{% if user_menu_language == 'lt' %}Ieškoti pagal pavadinimą{% else %}Search by name{% endif %}</label>
+            <input type="text" id="name-filter" placeholder="{% if user_menu_language == 'lt' %}Įveskite pavadinimą...{% else %}Enter dish name...{% endif %}" class="form-control">
+        </div>
+        <div class="filter-group">
+            <label>{% if user_menu_language == 'lt' %}Filtruoti pagal kategoriją{% else %}Filter by category{% endif %}</label>
+            <select id="category-filter" class="form-control">
+                <option value="">{% if user_menu_language == 'lt' %}Visos kategorijos{% else %}All categories{% endif %}</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}">{{ category|get_name:user_menu_language }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    
+    <div id="dishes-container">
+        <div class="dishes-list" id="dishes-list">
+            <table style="width: 100%; border-collapse: separate; border-spacing: 0;">
+                <thead>
+                    <tr style="background: #f8f9fa;">
+                        <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 600; border-bottom: 2px solid #e0e0e0;">{% if user_menu_language == 'lt' %}Patiekalas{% else %}Dish{% endif %}</th>
+                        <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 600; border-bottom: 2px solid #e0e0e0;">{% if user_menu_language == 'lt' %}Kategorija{% else %}Category{% endif %}</th>
+                        <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 600; border-bottom: 2px solid #e0e0e0;">{% if user_menu_language == 'lt' %}Ingredientai{% else %}Ingredients{% endif %}</th>
+                        <th style="padding: 0.75rem 1rem; text-align: right; font-weight: 600; border-bottom: 2px solid #e0e0e0;">{% if user_menu_language == 'lt' %}Kaina{% else %}Price{% endif %}</th>
+                        <th style="padding: 0.75rem 1rem; text-align: center; font-weight: 600; border-bottom: 2px solid #e0e0e0; width: 50px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dish in all_dishes %}
+                    <tr class="dish-row" 
+                        data-dish-id="{{ dish.id }}"
+                        data-dish-name="{{ dish|get_name:user_menu_language|lower }}"
+                        data-category-id="{{ dish.category.id }}"
+                        data-category-name="{{ dish.category|get_name:user_menu_language|lower }}"
+                        onclick="toggleDish({{ dish.id }}, this)"
+                        style="cursor: pointer;">
+                        <td style="padding: 0.75rem 1rem; border-bottom: 1px solid #e0e0e0;">
+                            <div class="dish-name">{{ dish|get_name:user_menu_language }}</div>
+                        </td>
+                        <td style="padding: 0.75rem 1rem; border-bottom: 1px solid #e0e0e0;">
+                            <div class="dish-category">{{ dish.category|get_name:user_menu_language }}</div>
+                        </td>
+                        <td style="padding: 0.75rem 1rem; border-bottom: 1px solid #e0e0e0;">
+                            {% if dish|get_ingredients:user_menu_language %}
+                            <div class="dish-ingredients">{{ dish|get_ingredients:user_menu_language|truncatewords:15 }}</div>
+                            {% else %}
+                            <div class="dish-ingredients" style="color: #ccc;">-</div>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 0.75rem 1rem; border-bottom: 1px solid #e0e0e0; text-align: right;">
+                            <div class="dish-price">€{{ dish.price }}</div>
+                        </td>
+                        <td style="padding: 0.75rem 1rem; border-bottom: 1px solid #e0e0e0; text-align: center;">
+                            <div class="dish-status">
+                                <span class="checkmark" style="display: none;">✓</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="padding: 2rem; text-align: center; color: #7f8c8d;">
+                            {% if user_menu_language == 'lt' %}Patiekalų nėra{% else %}No dishes available{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <form method="post" id="add-dish-form" style="display: none;">
+        {% csrf_token %}
+        <input type="hidden" name="add_dish" id="selected-dish-id">
+    </form>
+</div>
+
+<div class="card menu-dishes-section">
+    <h3>{% if user_menu_language == 'lt' %}Meniu patiekalai{% else %}Menu Dishes{% endif %}</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>{% if user_menu_language == 'lt' %}Patiekalas{% else %}Dish{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Kategorija{% else %}Category{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Planuojamas kiekis{% else %}Planned Qty{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Pagamintas kiekis{% else %}Produced Qty{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Prieinamas{% else %}Available{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Išparduotas{% else %}Sold Out{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Veiksmai{% else %}Actions{% endif %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for menu_dish in menu_dishes %}
+            <tr>
+                <form method="post">
+                    {% csrf_token %}
+                    <td><a href="{% url 'user_menu:dish_edit' menu_dish.dish.pk %}" style="color: #3498db; text-decoration: none; font-weight: 500;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">{{ menu_dish.dish|get_name:user_menu_language }}</a></td>
+                    <td>{{ menu_dish.dish.category|get_name:user_menu_language }}</td>
+                    <td>
+                        <input type="number" name="planned_qty_{{ menu_dish.pk }}" value="{{ menu_dish.planned_quantity|default:'' }}" style="width: 80px;" min="0">
+                    </td>
+                    <td>
+                        <input type="number" name="produced_qty_{{ menu_dish.pk }}" value="{{ menu_dish.produced_quantity }}" style="width: 80px;" min="0">
+                    </td>
+                    <td>
+                        <input type="checkbox" name="available_{{ menu_dish.pk }}" {% if menu_dish.available %}checked{% endif %}>
+                    </td>
+                    <td>
+                        <input type="checkbox" name="sold_out_{{ menu_dish.pk }}" {% if menu_dish.sold_out %}checked{% endif %}>
+                    </td>
+                    <td>
+                        <input type="hidden" name="update_dish" value="{{ menu_dish.pk }}">
+                        <button type="submit" class="btn">{% if user_menu_language == 'lt' %}Atnaujinti{% else %}Update{% endif %}</button>
+                    </td>
+                </form>
+                <td>
+                    <form method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="remove_dish" value="{{ menu_dish.pk }}">
+                        <button type="submit" class="btn btn-danger">{% if user_menu_language == 'lt' %}Pašalinti{% else %}Remove{% endif %}</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7">{% if user_menu_language == 'lt' %}Šiame meniu nėra patiekalų. Spustelėkite ant patiekalų aukščiau, kad pridėtumėte juos į meniu.{% else %}No dishes in this menu. Click on dishes above to add them to the menu.{% endif %}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card menu-dishes-section">
+    <h3>{% if user_menu_language == 'lt' %}Pridėti kompleksą į meniu{% else %}Add Complex to Menu{% endif %}</h3>
+    <p style="color: #7f8c8d; margin-bottom: 1rem;">{% if user_menu_language == 'lt' %}Pasirinkite kompleksą iš sąrašo{% else %}Select a complex from the list{% endif %}</p>
+    
+    {% if available_complexes %}
+    <form method="post" style="margin-bottom: 1rem;">
+        {% csrf_token %}
+        <select name="add_complex" class="form-control" style="width: auto; display: inline-block; margin-right: 1rem;">
+            <option value="">{% if user_menu_language == 'lt' %}Pasirinkite kompleksą...{% else %}Select a complex...{% endif %}</option>
+            {% for complex in available_complexes %}
+            <option value="{{ complex.pk }}">{{ complex|get_name:user_menu_language }} - €{{ complex.price }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-success">{% if user_menu_language == 'lt' %}Pridėti{% else %}Add{% endif %}</button>
+    </form>
+    {% else %}
+    <p style="color: #7f8c8d;">{% if user_menu_language == 'lt' %}Visi kompleksai jau pridėti į meniu arba nėra prieinamų kompleksų.{% else %}All complexes are already in the menu or no complexes are available.{% endif %}</p>
+    {% endif %}
+</div>
+
+<div class="card menu-dishes-section">
+    <h3>{% if user_menu_language == 'lt' %}Meniu kompleksai{% else %}Menu Complexes{% endif %}</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>{% if user_menu_language == 'lt' %}Kompleksas{% else %}Complex{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Kaina{% else %}Price{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Prieinamas{% else %}Available{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Išparduotas{% else %}Sold Out{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Veiksmai{% else %}Actions{% endif %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for menu_complex in menu_complexes %}
+            <tr>
+                <form method="post">
+                    {% csrf_token %}
+                    <td><a href="{% url 'user_menu:complex_edit' menu_complex.complex.pk %}" style="color: #3498db; text-decoration: none; font-weight: 500;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">{{ menu_complex.complex|get_name:user_menu_language }}</a></td>
+                    <td>€{{ menu_complex.complex.price }}</td>
+                    <td>
+                        <input type="checkbox" name="available_complex_{{ menu_complex.pk }}" {% if menu_complex.available %}checked{% endif %}>
+                    </td>
+                    <td>
+                        <input type="checkbox" name="sold_out_complex_{{ menu_complex.pk }}" {% if menu_complex.sold_out %}checked{% endif %}>
+                    </td>
+                    <td>
+                        <input type="hidden" name="update_complex" value="{{ menu_complex.pk }}">
+                        <button type="submit" class="btn">{% if user_menu_language == 'lt' %}Atnaujinti{% else %}Update{% endif %}</button>
+                    </td>
+                </form>
+                <td>
+                    <form method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="remove_complex" value="{{ menu_complex.pk }}">
+                        <button type="submit" class="btn btn-danger">{% if user_menu_language == 'lt' %}Pašalinti{% else %}Remove{% endif %}</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">{% if user_menu_language == 'lt' %}Šiame meniu nėra kompleksų. Pridėkite kompleksus aukščiau.{% else %}No complexes in this menu. Add complexes above.{% endif %}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    // Get menu dish IDs
+    const menuDishIds = new Set([
+        {% for menu_dish in menu_dishes %}
+        {{ menu_dish.dish.id }}{% if not forloop.last %},{% endif %}
+        {% empty %}
+        // No dishes in menu yet
+        {% endfor %}
+    ]);
+    
+    // Mark dishes that are already in menu on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.dish-row').forEach(row => {
+            const dishId = parseInt(row.dataset.dishId);
+            if (menuDishIds.has(dishId)) {
+                row.classList.add('in-menu');
+                const checkmark = row.querySelector('.checkmark');
+                if (checkmark) {
+                    checkmark.style.display = 'inline';
+                }
+            }
+        });
+    });
+    
+    // Filter functionality
+    const nameFilter = document.getElementById('name-filter');
+    const categoryFilter = document.getElementById('category-filter');
+    const dishesList = document.getElementById('dishes-list');
+    const dishRows = Array.from(dishesList.querySelectorAll('.dish-row'));
+    
+    function filterDishes() {
+        const nameQuery = nameFilter.value.toLowerCase().trim();
+        const categoryId = categoryFilter.value;
+        let visibleCount = 0;
+        
+        dishRows.forEach(row => {
+            const dishName = row.dataset.dishName;
+            const dishCategoryId = row.dataset.categoryId;
+            
+            const nameMatch = !nameQuery || dishName.includes(nameQuery);
+            const categoryMatch = !categoryId || dishCategoryId === categoryId;
+            
+            if (nameMatch && categoryMatch) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Show message if no dishes match
+        const tbody = dishesList.querySelector('tbody');
+        let noResults = tbody.querySelector('.no-results-row');
+        
+        if (visibleCount === 0) {
+            if (!noResults) {
+                noResults = document.createElement('tr');
+                noResults.className = 'no-results-row';
+                noResults.innerHTML = '<td colspan="5" style="padding: 2rem; text-align: center; color: #7f8c8d;">{% if user_menu_language == "lt" %}Patiekalų nerasta{% else %}No dishes found{% endif %}</td>';
+                tbody.appendChild(noResults);
+            }
+        } else {
+            if (noResults) {
+                noResults.remove();
+            }
+        }
+    }
+    
+    nameFilter.addEventListener('input', filterDishes);
+    categoryFilter.addEventListener('change', filterDishes);
+    
+    // Toggle dish (add/remove from menu)
+    function toggleDish(dishId, cardElement) {
+        const isInMenu = menuDishIds.has(dishId);
+        
+        if (isInMenu) {
+            // Dish is already in menu - do nothing or show message
+            return;
+        } else {
+            // Add dish to menu
+            const form = document.getElementById('add-dish-form');
+            const input = document.getElementById('selected-dish-id');
+            input.value = dishId;
+            form.submit();
+        }
+    }
+    
+</script>
+{% endblock %}

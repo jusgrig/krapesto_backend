@@ -1,0 +1,88 @@
+{% extends 'menu/base.html' %}
+{% load menu_tags %}
+
+{% block title %}{% if user_menu_language == 'lt' %}Patiekalai{% else %}Dishes{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>{% if user_menu_language == 'lt' %}Patiekalų valdymas{% else %}Dishes Management{% endif %}</h2>
+    <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem;">
+        <a href="{% url 'user_menu:dish_create' %}" class="btn btn-success">{% if user_menu_language == 'lt' %}Sukurti naują patiekalą{% else %}Create New Dish{% endif %}</a>
+        <form method="get" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <!-- Category Filter -->
+            <select name="category" class="form-control" style="width: auto; display: inline-block; min-width: 180px;">
+                <option value="">{% if user_menu_language == 'lt' %}Visos kategorijos{% else %}All Categories{% endif %}</option>
+                {% for category in categories %}
+                <option value="{{ category.pk }}" {% if selected_category and selected_category.pk == category.pk %}selected{% endif %}>
+                    {{ category|get_name:user_menu_language }}
+                </option>
+                {% endfor %}
+            </select>
+            
+            <!-- Name Search -->
+            <input type="text" name="name" value="{{ search_name }}" placeholder="{% if user_menu_language == 'lt' %}Paieška pagal pavadinimą...{% else %}Search by name...{% endif %}" class="form-control" style="width: auto; display: inline-block; min-width: 200px;">
+            
+            <!-- Status Filter -->
+            <select name="status" class="form-control" style="width: auto; display: inline-block; min-width: 150px;">
+                <option value="">{% if user_menu_language == 'lt' %}Visos būsenos{% else %}All Status{% endif %}</option>
+                <option value="active" {% if selected_status == 'active' %}selected{% endif %}>{% if user_menu_language == 'lt' %}Aktyvus{% else %}Active{% endif %}</option>
+                <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>{% if user_menu_language == 'lt' %}Neaktyvus{% else %}Inactive{% endif %}</option>
+            </select>
+            
+            <button type="submit" class="btn" style="background: #3498db; color: white;">{% if user_menu_language == 'lt' %}Filtruoti{% else %}Filter{% endif %}</button>
+            
+            {% if selected_category or search_name or selected_status %}
+            <a href="{% url 'user_menu:dish_list' %}" class="btn" style="background: #95a5a6;">{% if user_menu_language == 'lt' %}Pašalinti filtrus{% else %}Clear Filters{% endif %}</a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    {% if selected_category or search_name or selected_status %}
+    <p style="margin-bottom: 1rem; color: #666;">
+        {% if user_menu_language == 'lt' %}
+        Filtruojama:
+        {% if selected_category %}<strong>Kategorija: {{ selected_category|get_name:user_menu_language }}</strong>{% endif %}
+        {% if search_name %}<strong>Pavadinimas: "{{ search_name }}"</strong>{% endif %}
+        {% if selected_status == 'active' %}<strong>Būsena: Aktyvus</strong>{% elif selected_status == 'inactive' %}<strong>Būsena: Neaktyvus</strong>{% endif %}
+        {% else %}
+        Filtering by:
+        {% if selected_category %}<strong>Category: {{ selected_category|get_name:user_menu_language }}</strong>{% endif %}
+        {% if search_name %}<strong>Name: "{{ search_name }}"</strong>{% endif %}
+        {% if selected_status == 'active' %}<strong>Status: Active</strong>{% elif selected_status == 'inactive' %}<strong>Status: Inactive</strong>{% endif %}
+        {% endif %}
+    </p>
+    {% endif %}
+    <table>
+        <thead>
+            <tr>
+                <th>{% if user_menu_language == 'lt' %}Pavadinimas{% else %}Name{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Kategorija{% else %}Category{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Kaina{% else %}Price{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Būsena{% else %}Status{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Veiksmai{% else %}Actions{% endif %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dish in dishes %}
+            <tr>
+                <td>{{ dish|get_name:user_menu_language }}</td>
+                <td>{{ dish.category|get_name:user_menu_language }}</td>
+                <td>€{{ dish.price }}</td>
+                <td>{% if dish.active %}<span style="color: green;">{% if user_menu_language == 'lt' %}Aktyvus{% else %}Active{% endif %}</span>{% else %}<span style="color: red;">{% if user_menu_language == 'lt' %}Neaktyvus{% else %}Inactive{% endif %}</span>{% endif %}</td>
+                <td>
+                    <a href="{% url 'user_menu:dish_edit' dish.pk %}" class="btn">{% if user_menu_language == 'lt' %}Redaguoti{% else %}Edit{% endif %}</a>
+                    {% if dish.active %}
+                    <a href="{% url 'user_menu:dish_delete' dish.pk %}" class="btn btn-danger">{% if user_menu_language == 'lt' %}Deaktyvuoti{% else %}Deactivate{% endif %}</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">{% if user_menu_language == 'lt' %}Patiekalų nerasta.{% else %}No dishes found.{% endif %} <a href="{% url 'user_menu:dish_create' %}">{% if user_menu_language == 'lt' %}Sukurti{% else %}Create one{% endif %}</a></td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

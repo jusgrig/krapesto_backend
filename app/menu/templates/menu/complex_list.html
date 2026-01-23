@@ -1,0 +1,297 @@
+{% extends 'menu/base.html' %}
+{% load menu_tags %}
+
+{% block title %}{% if user_menu_language == 'lt' %}Kompleksai{% else %}Complexes{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>{% if user_menu_language == 'lt' %}Kompleksų valdymas{% else %}Complexes Management{% endif %}</h2>
+    <a href="{% url 'user_menu:complex_create' %}" class="btn btn-success">{% if user_menu_language == 'lt' %}Sukurti naują kompleksą{% else %}Create New Complex{% endif %}</a>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>{% if user_menu_language == 'lt' %}Eilės tvarka{% else %}Order{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Pavadinimas{% else %}Name{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Kaina{% else %}Price{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Sriubos dydžiai{% else %}Soup Sizes{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Patiekalo tipai{% else %}Dish Types{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Gėrimai{% else %}Drinks{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Būsena{% else %}Status{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Veiksmai{% else %}Actions{% endif %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for complex in complexes %}
+            <tr id="complex-row-{{ complex.pk }}" data-complex-id="{{ complex.pk }}">
+                <td>{{ complex.order }}</td>
+                <td>{{ complex|get_name:user_menu_language }}</td>
+                <td>€{{ complex.price }}</td>
+                <td class="soup-sizes-cell">
+                    <div class="display-mode">
+                        {% if complex.dish_options.all %}
+                            {% regroup complex.dish_options.all by soup_size as sizes_grouped %}
+                            {% for size_group in sizes_grouped %}
+                                {% if size_group.grouper == 'none' %}{% if user_menu_language == 'lt' %}Nėra{% else %}None{% endif %}{% elif size_group.grouper == 'half' %}{% if user_menu_language == 'lt' %}Pusė{% else %}Half{% endif %}{% else %}{% if user_menu_language == 'lt' %}Pilnas{% else %}Full{% endif %}{% endif %}{% if not forloop.last %}, {% endif %}
+                            {% empty %}
+                                -
+                            {% endfor %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </div>
+                    <div class="edit-mode" style="display: none;">
+                        <select multiple class="form-control soup-sizes-select" style="min-width: 120px; height: 80px;">
+                            <option value="none">{% if user_menu_language == 'lt' %}Nėra{% else %}None{% endif %}</option>
+                            <option value="half">{% if user_menu_language == 'lt' %}Pusė{% else %}Half{% endif %}</option>
+                            <option value="full">{% if user_menu_language == 'lt' %}Pilnas{% else %}Full{% endif %}</option>
+                        </select>
+                    </div>
+                </td>
+                <td class="dish-types-cell">
+                    <div class="display-mode">
+                        {% if complex.dish_options.all %}
+                            {% regroup complex.dish_options.all by main_dish_type as types_grouped %}
+                            {% for type_group in types_grouped %}
+                                {% if type_group.grouper == 'main' %}{% if user_menu_language == 'lt' %}Pagrindinis patiekalas{% else %}Main Course{% endif %}{% elif type_group.grouper == 'main_light' %}{% if user_menu_language == 'lt' %}Lengvas pagrindinis patiekalas{% else %}Main Course Light{% endif %}{% else %}{% if user_menu_language == 'lt' %}Pica{% else %}Pizza{% endif %}{% endif %}{% if not forloop.last %}, {% endif %}
+                            {% empty %}
+                                -
+                            {% endfor %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </div>
+                    <div class="edit-mode" style="display: none;">
+                        <select multiple class="form-control dish-types-select" style="min-width: 180px; height: 80px;">
+                            <option value="main">{% if user_menu_language == 'lt' %}Pagrindinis patiekalas{% else %}Main Course{% endif %}</option>
+                            <option value="main_light">{% if user_menu_language == 'lt' %}Lengvas pagrindinis patiekalas{% else %}Main Course Light{% endif %}</option>
+                            <option value="pizza">{% if user_menu_language == 'lt' %}Pica{% else %}Pizza{% endif %}</option>
+                        </select>
+                    </div>
+                </td>
+                <td class="drinks-cell">
+                    <div class="display-mode">
+                        {% if complex.dish_options.all %}
+                            {% regroup complex.dish_options.all by include_drink as drinks_grouped %}
+                            {% for drink_group in drinks_grouped %}
+                                {% if drink_group.grouper %}{% if user_menu_language == 'lt' %}Taip{% else %}Yes{% endif %}{% else %}{% if user_menu_language == 'lt' %}Ne{% else %}No{% endif %}{% endif %}{% if not forloop.last %}, {% endif %}
+                            {% empty %}
+                                -
+                            {% endfor %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </div>
+                    <div class="edit-mode" style="display: none;">
+                        <select multiple class="form-control drinks-select" style="min-width: 100px; height: 60px;">
+                            <option value="true">{% if user_menu_language == 'lt' %}Su gėrimu{% else %}With Drink{% endif %}</option>
+                            <option value="false">{% if user_menu_language == 'lt' %}Be gėrimo{% else %}Without Drink{% endif %}</option>
+                        </select>
+                    </div>
+                </td>
+                <td>{% if complex.active %}<span style="color: green;">{% if user_menu_language == 'lt' %}Aktyvus{% else %}Active{% endif %}</span>{% else %}<span style="color: red;">{% if user_menu_language == 'lt' %}Neaktyvus{% else %}Inactive{% endif %}</span>{% endif %}</td>
+                <td>
+                    <button class="btn edit-complex-btn" data-complex-id="{{ complex.pk }}">{% if user_menu_language == 'lt' %}Redaguoti{% else %}Edit{% endif %}</button>
+                    <button class="btn save-complex-btn" data-complex-id="{{ complex.pk }}" style="display: none;">{% if user_menu_language == 'lt' %}Išsaugoti{% else %}Save{% endif %}</button>
+                    <button class="btn cancel-complex-btn" data-complex-id="{{ complex.pk }}" style="display: none;">{% if user_menu_language == 'lt' %}Atšaukti{% else %}Cancel{% endif %}</button>
+                    {% if complex.active %}
+                    <a href="{% url 'user_menu:complex_delete' complex.pk %}" class="btn btn-danger">{% if user_menu_language == 'lt' %}Deaktyvuoti{% else %}Deactivate{% endif %}</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8">{% if user_menu_language == 'lt' %}Kompleksų nerasta.{% else %}No complexes found.{% endif %} <a href="{% url 'user_menu:complex_create' %}">{% if user_menu_language == 'lt' %}Sukurti{% else %}Create one{% endif %}</a></td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get CSRF token from cookie
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+    
+    // Get current selected values for each complex
+    const complexData = {};
+    {% for complex in complexes %}
+    complexData[{{ complex.pk }}] = {
+        soupSizes: [
+            {% regroup complex.dish_options.all by soup_size as sizes_grouped %}
+            {% for size_group in sizes_grouped %}
+            '{{ size_group.grouper }}'{% if not forloop.last %},{% endif %}
+            {% empty %}
+            {% endfor %}
+        ],
+        dishTypes: [
+            {% regroup complex.dish_options.all by main_dish_type as types_grouped %}
+            {% for type_group in types_grouped %}
+            '{{ type_group.grouper }}'{% if not forloop.last %},{% endif %}
+            {% empty %}
+            {% endfor %}
+        ],
+        drinks: [
+            {% regroup complex.dish_options.all by include_drink as drinks_grouped %}
+            {% for drink_group in drinks_grouped %}
+            '{{ drink_group.grouper|yesno:"true,false" }}'{% if not forloop.last %},{% endif %}
+            {% empty %}
+            {% endfor %}
+        ]
+    };
+    {% endfor %}
+    
+    // Edit button handler
+    document.querySelectorAll('.edit-complex-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const complexId = this.dataset.complexId;
+            const row = document.getElementById('complex-row-' + complexId);
+            
+            // Show edit mode
+            row.querySelectorAll('.display-mode').forEach(el => el.style.display = 'none');
+            row.querySelectorAll('.edit-mode').forEach(el => el.style.display = 'block');
+            
+            // Set selected values
+            const soupSizesSelect = row.querySelector('.soup-sizes-select');
+            const dishTypesSelect = row.querySelector('.dish-types-select');
+            const drinksSelect = row.querySelector('.drinks-select');
+            
+            // Clear and set soup sizes
+            Array.from(soupSizesSelect.options).forEach(opt => {
+                opt.selected = complexData[complexId].soupSizes.includes(opt.value);
+            });
+            
+            // Clear and set dish types
+            Array.from(dishTypesSelect.options).forEach(opt => {
+                opt.selected = complexData[complexId].dishTypes.includes(opt.value);
+            });
+            
+            // Clear and set drinks
+            Array.from(drinksSelect.options).forEach(opt => {
+                opt.selected = complexData[complexId].drinks.includes(opt.value);
+            });
+            
+            // Show/hide buttons
+            row.querySelector('.edit-complex-btn').style.display = 'none';
+            row.querySelector('.save-complex-btn').style.display = 'inline-block';
+            row.querySelector('.cancel-complex-btn').style.display = 'inline-block';
+        });
+    });
+    
+    // Cancel button handler
+    document.querySelectorAll('.cancel-complex-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const complexId = this.dataset.complexId;
+            const row = document.getElementById('complex-row-' + complexId);
+            
+            // Show display mode
+            row.querySelectorAll('.display-mode').forEach(el => el.style.display = 'block');
+            row.querySelectorAll('.edit-mode').forEach(el => el.style.display = 'none');
+            
+            // Show/hide buttons
+            row.querySelector('.edit-complex-btn').style.display = 'inline-block';
+            row.querySelector('.save-complex-btn').style.display = 'none';
+            row.querySelector('.cancel-complex-btn').style.display = 'none';
+        });
+    });
+    
+    // Save button handler
+    document.querySelectorAll('.save-complex-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const complexId = this.dataset.complexId;
+            const row = document.getElementById('complex-row-' + complexId);
+            
+            const soupSizesSelect = row.querySelector('.soup-sizes-select');
+            const dishTypesSelect = row.querySelector('.dish-types-select');
+            const drinksSelect = row.querySelector('.drinks-select');
+            
+            const soupSizes = Array.from(soupSizesSelect.selectedOptions).map(opt => opt.value);
+            const dishTypes = Array.from(dishTypesSelect.selectedOptions).map(opt => opt.value);
+            const drinks = Array.from(drinksSelect.selectedOptions).map(opt => opt.value);
+            
+            if (soupSizes.length === 0 || dishTypes.length === 0 || drinks.length === 0) {
+                alert('{% if user_menu_language == "lt" %}Pasirinkite bent vieną sriubos dydį, patiekalo tipą ir gėrimo parinktį{% else %}Please select at least one soup size, dish type, and drink option{% endif %}');
+                return;
+            }
+            
+            // Send AJAX request
+            const formData = new FormData();
+            soupSizes.forEach(size => formData.append('soup_sizes[]', size));
+            dishTypes.forEach(type => formData.append('dish_types[]', type));
+            drinks.forEach(drink => formData.append('include_drinks[]', drink));
+            
+            fetch('{% url "user_menu:complex_update_dish_options" 0 %}'.replace('0', complexId), {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrftoken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update display
+                    const soupSizesText = soupSizes.map(size => 
+                        size === 'none' ? '{% if user_menu_language == "lt" %}Nėra{% else %}None{% endif %}' :
+                        size === 'half' ? '{% if user_menu_language == "lt" %}Pusė{% else %}Half{% endif %}' : 
+                        '{% if user_menu_language == "lt" %}Pilnas{% else %}Full{% endif %}'
+                    ).join(', ');
+                    
+                    const dishTypesText = dishTypes.map(type => 
+                        type === 'main' ? '{% if user_menu_language == "lt" %}Pagrindinis patiekalas{% else %}Main Course{% endif %}' : 
+                        type === 'main_light' ? '{% if user_menu_language == "lt" %}Lengvas pagrindinis patiekalas{% else %}Main Course Light{% endif %}' :
+                        '{% if user_menu_language == "lt" %}Pica{% else %}Pizza{% endif %}'
+                    ).join(', ');
+                    
+                    const drinksText = drinks.map(drink => 
+                        drink === 'true' ? '{% if user_menu_language == "lt" %}Taip{% else %}Yes{% endif %}' : 
+                        '{% if user_menu_language == "lt" %}Ne{% else %}No{% endif %}'
+                    ).join(', ');
+                    
+                    row.querySelector('.soup-sizes-cell .display-mode').textContent = soupSizesText || '-';
+                    row.querySelector('.dish-types-cell .display-mode').textContent = dishTypesText || '-';
+                    row.querySelector('.drinks-cell .display-mode').textContent = drinksText || '-';
+                    
+                    // Update stored data
+                    complexData[complexId] = { soupSizes, dishTypes, drinks };
+                    
+                    // Show display mode
+                    row.querySelectorAll('.display-mode').forEach(el => el.style.display = 'block');
+                    row.querySelectorAll('.edit-mode').forEach(el => el.style.display = 'none');
+                    
+                    // Show/hide buttons
+                    row.querySelector('.edit-complex-btn').style.display = 'inline-block';
+                    row.querySelector('.save-complex-btn').style.display = 'none';
+                    row.querySelector('.cancel-complex-btn').style.display = 'none';
+                    
+                    alert(data.message);
+                    // Reload page to refresh data
+                    window.location.reload();
+                } else {
+                    alert('{% if user_menu_language == "lt" %}Klaida{% else %}Error{% endif %}: ' + (data.message || '{% if user_menu_language == "lt" %}Nepavyko išsaugoti{% else %}Failed to save{% endif %}'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('{% if user_menu_language == "lt" %}Klaida išsaugant{% else %}Error saving{% endif %}');
+            });
+        });
+    });
+});
+</script>
+{% endblock %}
+

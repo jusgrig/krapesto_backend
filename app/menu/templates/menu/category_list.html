@@ -1,0 +1,44 @@
+{% extends 'menu/base.html' %}
+{% load menu_tags %}
+
+{% block title %}{% if user_menu_language == 'lt' %}Kategorijos{% else %}Categories{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>{% if user_menu_language == 'lt' %}Kategorijų valdymas{% else %}Categories Management{% endif %}</h2>
+    <a href="{% url 'user_menu:category_create' %}" class="btn btn-success">{% if user_menu_language == 'lt' %}Sukurti naują kategoriją{% else %}Create New Category{% endif %}</a>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>{% if user_menu_language == 'lt' %}Eilės tvarka{% else %}Order{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Pavadinimas{% else %}Name{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Patiekalai{% else %}Dishes{% endif %}</th>
+                <th>{% if user_menu_language == 'lt' %}Veiksmai{% else %}Actions{% endif %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for category in categories %}
+            <tr>
+                <td>{{ category.order }}</td>
+                <td>{{ category|get_name:user_menu_language }}</td>
+                <td>{{ category.dishes.count }} {% if user_menu_language == 'lt' %}patiekalai{% else %}dish{{ category.dishes.count|pluralize:"es" }}{% endif %}</td>
+                <td>
+                    <a href="{% url 'user_menu:category_edit' category.pk %}" class="btn">{% if user_menu_language == 'lt' %}Redaguoti{% else %}Edit{% endif %}</a>
+                    {% if category.dishes.count == 0 %}
+                    <a href="{% url 'user_menu:category_delete' category.pk %}" class="btn btn-danger">{% if user_menu_language == 'lt' %}Ištrinti{% else %}Delete{% endif %}</a>
+                    {% else %}
+                    <span style="color: #999; font-size: 0.9em;">{% if user_menu_language == 'lt' %}Negalima ištrinti (turi patiekalų){% else %}Cannot delete (has dishes){% endif %}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">{% if user_menu_language == 'lt' %}Kategorijų nerasta.{% else %}No categories found.{% endif %} <a href="{% url 'user_menu:category_create' %}">{% if user_menu_language == 'lt' %}Sukurti{% else %}Create one{% endif %}</a></td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

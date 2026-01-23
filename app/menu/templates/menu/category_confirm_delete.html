@@ -1,0 +1,26 @@
+{% extends 'menu/base.html' %}
+{% load menu_tags %}
+
+{% block title %}{% if user_menu_language == 'lt' %}Ištrinti kategoriją{% else %}Delete Category{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>{% if user_menu_language == 'lt' %}Ištrinti kategoriją{% else %}Delete Category{% endif %}</h2>
+    <p>{% if user_menu_language == 'lt' %}Ar tikrai norite ištrinti "{{ category|get_name:user_menu_language }}"?{% else %}Are you sure you want to delete "{{ category|get_name:user_menu_language }}"?{% endif %}</p>
+    
+    {% if category.dishes.exists %}
+    <div style="background: #fff3cd; border: 1px solid #ffc107; padding: 1rem; border-radius: 4px; margin: 1rem 0;">
+        <strong>{% if user_menu_language == 'lt' %}Įspėjimas:{% else %}Warning:{% endif %}</strong> {% if user_menu_language == 'lt' %}Ši kategorija turi {{ category.dishes.count }} patiekal{{ category.dishes.count|pluralize:"ą,us" }}. Negalite ištrinti kategorijos, kuri turi priskirtų patiekalų.{% else %}This category has {{ category.dishes.count }} dish{{ category.dishes.count|pluralize:"es" }}. You cannot delete a category that has dishes assigned to it.{% endif %}
+    </div>
+    <a href="{% url 'user_menu:category_list' %}" class="btn">{% if user_menu_language == 'lt' %}Atgal į kategorijas{% else %}Back to Categories{% endif %}</a>
+    {% else %}
+    <p style="color: #666;">{% if user_menu_language == 'lt' %}Šio veiksmo negalima anuliuoti.{% else %}This action cannot be undone.{% endif %}</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">{% if user_menu_language == 'lt' %}Ištrinti kategoriją{% else %}Delete Category{% endif %}</button>
+        <a href="{% url 'user_menu:category_list' %}" class="btn">{% if user_menu_language == 'lt' %}Atšaukti{% else %}Cancel{% endif %}</a>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}
+

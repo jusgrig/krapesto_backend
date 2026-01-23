@@ -1,0 +1,18 @@
+{% extends 'menu/base.html' %}
+{% load menu_tags %}
+
+{% block title %}{% if user_menu_language == 'lt' %}Deaktyvuoti kompleksą{% else %}Deactivate Complex{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>{% if user_menu_language == 'lt' %}Deaktyvuoti kompleksą{% else %}Deactivate Complex{% endif %}</h2>
+    <p>{% if user_menu_language == 'lt' %}Ar tikrai norite deaktyvuoti kompleksą{% else %}Are you sure you want to deactivate the complex{% endif %} <strong>{{ complex|get_name:user_menu_language }}</strong>?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">{% if user_menu_language == 'lt' %}Taip, deaktyvuoti{% else %}Yes, deactivate{% endif %}</button>
+        <a href="{% url 'user_menu:complex_list' %}" class="btn">{% if user_menu_language == 'lt' %}Atšaukti{% else %}Cancel{% endif %}</a>
+    </form>
+</div>
+{% endblock %}
+
+
